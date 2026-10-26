@@ -1,0 +1,933 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{float}
+\graphicspath{{"../Part 1 code/outputs/"}{"../Part 2 code/outputs/"}{"../Part 3 code/outputs/"}{"../Part 4 code/outputs/"}{"../Part 5 code/outputs/"}}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\dd}{\mathrm{d}}
+
+\title{Assignment 1}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Part 1: Simulating the Forward Diffusion}
+
+\subsection*{Derivations}
+
+Throughout, $X_t$ solves the Ornstein--Uhlenbeck SDE
+\begin{equation}\label{eq:ou}
+\dd X_t = -\theta X_t\,\dd t + \sqrt{2\theta}\,\dd W_t, \qquad \theta>0,
+\end{equation}
+with initial density
+$p_0(x) = \tfrac12\varphi(x\mid -3,0.5^2) + \tfrac12\varphi(x\mid 3,0.5^2)$.
+We use the It\^o rules $(\dd t)^2 = 0$, $\dd t\,\dd W_t = 0$, $(\dd W_t)^2 = \dd t$,
+and $\E[\dd W_t]=0$ (since $\dd W_t\sim\N(0,\dd t)$ and is independent of $X_t$).
+
+\subsubsection*{1(a) Stationary distribution}
+
+\paragraph{Mean.} Taking expectations of \eqref{eq:ou},
+\[
+\dd\,\E[X_t] = -\theta\,\E[X_t]\,\dd t + \sqrt{2\theta}\,\E[\dd W_t]
+\quad\Longrightarrow\quad
+\frac{\dd m}{\dd t} = -\theta\, m(t).
+\]
+Separating variables, $\int \frac{\dd m}{m} = -\theta\int \dd t$, so
+$\ln|m| = -\theta t + c$, i.e.\ $m(t) = C e^{-\theta t}$. Setting $t=0$ gives $C=m(0)$, hence
+\[
+m(t) = m(0)\,e^{-\theta t} \xrightarrow[t\to\infty]{} 0 .
+\]
+
+\paragraph{Second moment.} Apply It\^o's lemma,
+$\dd f = \partial_t f\,\dd t + \partial_x f\,\dd X_t + \tfrac12\partial_{xx} f\,(\dd X_t)^2$,
+to $f(x)=x^2$, for which $\partial_t f = 0$, $\partial_x f = 2x$, $\partial_{xx}f = 2$:
+\begin{equation}\label{eq:ito-sq}
+\dd(X_t^2) = 2X_t\,\dd X_t + (\dd X_t)^2 .
+\end{equation}
+Squaring \eqref{eq:ou},
+\[
+(\dd X_t)^2 = \theta^2 X_t^2 (\dd t)^2 + 2\theta(\dd W_t)^2 - 2\theta\sqrt{2\theta}\,X_t\,\dd t\,\dd W_t = 2\theta\,\dd t .
+\]
+Substituting this and \eqref{eq:ou} into \eqref{eq:ito-sq},
+\[
+\dd(X_t^2) = 2X_t\bigl(-\theta X_t\,\dd t + \sqrt{2\theta}\,\dd W_t\bigr) + 2\theta\,\dd t
+= \bigl(-2\theta X_t^2 + 2\theta\bigr)\dd t + 2\sqrt{2\theta}\,X_t\,\dd W_t .
+\]
+Taking expectations (the It\^o integral term has zero mean),
+\begin{equation}\label{eq:second}
+\frac{\dd\,\E[X_t^2]}{\dd t} = -2\theta\,\E[X_t^2] + 2\theta .
+\end{equation}
+
+\paragraph{Variance.} By definition $\Sigma(t) = \E[X_t^2] - m(t)^2$, so
+\[
+\frac{\dd\Sigma}{\dd t} = \frac{\dd\,\E[X_t^2]}{\dd t} - 2m(t)\frac{\dd m}{\dd t}.
+\]
+Using \eqref{eq:second} and $\dd m/\dd t = -\theta m$,
+\[
+\frac{\dd\Sigma}{\dd t} = -2\theta\,\E[X_t^2] + 2\theta + 2\theta\, m(t)^2
+= -2\theta\bigl(\E[X_t^2]-m(t)^2\bigr) + 2\theta
+= -2\theta\,\Sigma(t) + 2\theta .
+\]
+Separating variables, $\int_0^t \frac{\dd\Sigma}{\Sigma-1} = -2\theta\int_0^t \dd s$, so
+$\ln\left|\frac{\Sigma(t)-1}{\Sigma(0)-1}\right| = -2\theta t$ and
+\[
+\Sigma(t) = 1 + \bigl(\Sigma(0)-1\bigr)e^{-2\theta t} \xrightarrow[t\to\infty]{} 1 .
+\]
+
+\paragraph{Stationary law.} The limiting mean and variance are $0$ and $1$. To identify the
+whole distribution (not only its first two moments) we use the solution derived in 1(b):
+conditionally on $X_0$, $X_t\sim\N(e^{-\theta t}X_0,\,1-e^{-2\theta t})$, whose characteristic function is
+$\E[e^{iuX_t}\mid X_0] = \exp\!\bigl(iue^{-\theta t}X_0 - \tfrac12u^2(1-e^{-2\theta t})\bigr)$.
+As $t\to\infty$ this tends to $e^{-u^2/2}$ for every $X_0$, and by dominated convergence
+$\E[e^{iuX_t}]\to e^{-u^2/2}$ for any initial law. Hence
+\[
+\boxed{\pi = \N(0,1).}
+\]
+Equivalently, $\N(0,1)$ is stationary: if $X_0\sim\N(0,1)$ then $X_t$ is Gaussian with
+$m(t)=0$ and $\Sigma(t)=1$ for all $t$.
+
+\subsubsection*{1(b) Solution by integrating factor}
+
+Write \eqref{eq:ou} as $\dd X_t + \theta X_t\,\dd t = \sqrt{2\theta}\,\dd W_t$, which has the linear form
+$\dot x + P(t)x = Q(t)$ with $P(t)=\theta$. The integrating factor is
+$I_t = \exp\!\left(\int\theta\,\dd t\right) = e^{\theta t}$. Define
+$Y_t = f(t,X_t) = e^{\theta t}X_t$. The partial derivatives are
+\[
+\partial_t f = \theta e^{\theta t}x,\qquad
+\partial_x f = e^{\theta t},\qquad
+\partial_{xx} f = 0,\qquad
+\partial_{tx} f = \theta e^{\theta t},\qquad
+\partial_{tt} f = \theta^2 e^{\theta t}x .
+\]
+The multivariate It\^o expansion is
+\[
+\dd Y_t = \partial_t f\,\dd t + \partial_x f\,\dd X_t + \tfrac12\partial_{xx}f\,(\dd X_t)^2
++ \partial_{tx}f\,\dd t\,\dd X_t + \tfrac12\partial_{tt}f\,(\dd t)^2 .
+\]
+Here $(\dd t)^2=0$, $\dd t\,\dd X_t = -\theta X_t(\dd t)^2 + \sqrt{2\theta}\,\dd t\,\dd W_t = 0$, and the
+$(\dd X_t)^2 = 2\theta\,\dd t$ term is multiplied by $\partial_{xx}f=0$. Therefore
+\[
+\dd(e^{\theta t}X_t) = \theta e^{\theta t}X_t\,\dd t + e^{\theta t}\bigl(-\theta X_t\,\dd t + \sqrt{2\theta}\,\dd W_t\bigr)
+= \sqrt{2\theta}\,e^{\theta t}\,\dd W_t .
+\]
+Integrating from $0$ to $t$,
+\[
+e^{\theta t}X_t - X_0 = \sqrt{2\theta}\int_0^t e^{\theta s}\,\dd W_s
+\quad\Longrightarrow\quad
+X_t = e^{-\theta t}X_0 + \sqrt{2\theta}\int_0^t e^{-\theta(t-s)}\,\dd W_s .
+\]
+
+\paragraph{Gaussianity.} The stochastic integral has a deterministic integrand, so it is a limit of
+sums $\sum_k g(s_k)(W_{s_{k+1}}-W_{s_k})$ of independent Gaussians and is therefore Gaussian. It is
+independent of $X_0$, so $X_t\mid X_0$ is Gaussian and is fixed by its mean and variance.
+
+\paragraph{Mean.} Since $\E\bigl[\int_0^t g(s)\,\dd W_s\bigr]=0$,
+\[
+\E[X_t\mid X_0] = e^{-\theta t}X_0 + \sqrt{2\theta}\int_0^t e^{-\theta(t-s)}\,\E[\dd W_s] = e^{-\theta t}X_0 .
+\]
+
+\paragraph{Variance.} $X_t - \E[X_t\mid X_0] = \sqrt{2\theta}\int_0^t e^{-\theta(t-s)}\,\dd W_s$. By It\^o's isometry,
+$\E\bigl[(\int_0^t g(s)\,\dd W_s)^2\bigr] = \int_0^t g(s)^2\,\dd s$, so
+\[
+\Var(X_t\mid X_0) = 2\theta\int_0^t e^{-2\theta(t-s)}\,\dd s
+= 2\theta\, e^{-2\theta t}\left[\frac{e^{2\theta s}}{2\theta}\right]_0^t
+= e^{-2\theta t}\bigl(e^{2\theta t}-1\bigr) = 1 - e^{-2\theta t}.
+\]
+Hence
+\[
+\boxed{X_t\mid X_0 \sim \N\!\left(e^{-\theta t}X_0,\; 1-e^{-2\theta t}\right).}
+\]
+
+\subsubsection*{1(c) Law of $X_t$}
+
+From 1(b) we may write $X_t = e^{-\theta t}X_0 + \xi_t$ with $\xi_t\sim\N(0,1-e^{-2\theta t})$ independent of $X_0$.
+Introduce a latent label $Z\in\{1,2\}$ with $P(Z=1)=P(Z=2)=\tfrac12$ such that
+\[
+X_0\mid Z=1 \sim \N(-3,0.5^2),\qquad X_0\mid Z=2 \sim \N(3,0.5^2),
+\]
+which reproduces $p_0$. By the law of total probability,
+$p_t(x) = \tfrac12\,p(x\mid Z=1) + \tfrac12\,p(x\mid Z=2)$.
+Conditionally on $Z$, $X_t$ is a sum of two independent Gaussians, hence Gaussian, with
+\[
+\E[X_t\mid Z=1] = e^{-\theta t}\E[X_0\mid Z=1] + \E[\xi_t] = -3e^{-\theta t},\qquad
+\E[X_t\mid Z=2] = 3e^{-\theta t},
+\]
+and, using $\Var(cY)=c^2\Var(Y)$ and independence,
+\[
+\Var(X_t\mid Z=k) = e^{-2\theta t}\Var(X_0\mid Z=k) + \Var(\xi_t)
+= 0.25\,e^{-2\theta t} + 1 - e^{-2\theta t} = 1 - 0.75\,e^{-2\theta t} =: v_t ,
+\]
+for $k=1,2$. Therefore
+\[
+\boxed{p_t(x) = \tfrac12\varphi\!\left(x\mid -3e^{-\theta t}, v_t\right) + \tfrac12\varphi\!\left(x\mid 3e^{-\theta t}, v_t\right),
+\qquad v_t = 1-0.75\,e^{-2\theta t}.}
+\]
+
+\paragraph{Checks.} At $t=0$: $v_0 = 1-0.75 = 0.25 = 0.5^2$, and the means are $\mp3$, recovering $p_0$.
+As $t\to\infty$: $v_t = 1-0.75\lim_{t\to\infty}e^{-2\theta t} = 1$ and both means tend to $0$, so
+$p_t\to\varphi(x\mid0,1)=\pi$, consistent with 1(a).
+
+\subsubsection*{1(d) Dependence on $\theta t$ only}
+
+Set $s=\theta t$. Then
+\[
+p_t(x) = \tfrac12\varphi\!\left(x\mid -3e^{-s},\,1-0.75e^{-2s}\right) + \tfrac12\varphi\!\left(x\mid 3e^{-s},\,1-0.75e^{-2s}\right).
+\]
+Neither $\theta$ nor $t$ appears anywhere except through $s$, so the law of $X_t$ depends on $(\theta,t)$
+only through the product $\theta t$.
+
+This also follows directly from the SDE. Let $\tilde X_s = X_{s/\theta}$. Since
+$\tilde W_s = \sqrt{\theta}\,W_{s/\theta}$ is a standard Brownian motion,
+\[
+\dd\tilde X_s = -\theta\tilde X_s\,\frac{\dd s}{\theta} + \sqrt{2\theta}\,\frac{\dd\tilde W_s}{\sqrt\theta}
+= -\tilde X_s\,\dd s + \sqrt2\,\dd\tilde W_s ,
+\]
+which is the $\theta=1$ OU process with the same initial law. Changing $\theta$ is therefore only a
+rescaling of time.
+
+\subsection*{Implementation}
+
+Equation~\eqref{eq:ou} is discretised with the Euler--Maruyama scheme
+\[
+X_{t+\Delta t} = X_t - \theta X_t\,\Delta t + \sqrt{2\theta\Delta t}\,Z_t,\qquad Z_t\overset{\text{iid}}{\sim}\N(0,1),
+\]
+using the defaults $\theta=1$, $N=2\times10^4$, $\Delta t=10^{-3}$ and a fixed random seed.
+The horizon is $T=5.40$, the value obtained in Part 2(d). The code and instructions to reproduce every figure
+are in the \texttt{Part 1 code} folder.
+
+\subsubsection*{(a) Sample paths}
+
+Figure~\ref{fig:paths} shows ten trajectories (simulated with a separate seed, so that the figure
+shows typical paths rather than a rare large excursion). Paths start near $\pm3$, are pulled towards $0$ on a
+time scale of order $1/\theta$, and then fluctuate with unit variance, mixing between the two
+former modes.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{a_sample_paths.png}
+\caption{Ten Euler--Maruyama sample paths of the OU process, $\theta=1$.}
+\label{fig:paths}
+\end{figure}
+
+\subsubsection*{(b) Empirical histograms versus the exact density}
+
+Figure~\ref{fig:hist} overlays the histogram of the $N$ simulated particles (100 bins on $[-5,5]$)
+on the exact density $p_t$ from 1(c) at five equally spaced times in $[0,T]$. We measure the
+discrepancy as $\max_j |\hat p_t(x_j) - p_t(x_j)|$ over bin centres $x_j$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{b_histograms.png}
+\caption{Simulated histograms (shaded) against the exact density $p_t$ (black).}
+\label{fig:hist}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cccccc}
+\hline
+$t$ & 0.00 & 1.35 & 2.70 & 4.05 & 5.40 \\
+\hline
+$\max_j|\hat p_t - p_t|$ & 0.0244 & 0.0149 & 0.0210 & 0.0248 & 0.0295 \\
+\hline
+\end{tabular}
+\caption{Largest pointwise histogram error at each snapshot time.}
+\end{table}
+
+The largest discrepancy observed is $0.030$. This error is about what Monte Carlo noise alone
+predicts: with bin width $h=0.1$ and $N=2\times10^4$, the standard error of a bin height near a peak
+of height $\approx 0.4$ is $\sqrt{p/(Nh)}\approx 0.014$, and the maximum over 100 bins is a few such
+standard errors. The error does not grow with $t$, so the time-discretisation bias is negligible
+at $\Delta t = 10^{-3}$.
+
+\subsubsection*{(c) Disappearance of bimodality}
+
+Under the dynamics both mixture components move towards the origin, with means
+$\pm3e^{-\theta t}$, while their variance $v_t$ grows from $0.25$ to $1$. The two bumps therefore
+approach and widen until they merge into a single peak (Figure~\ref{fig:bimodal}).
+
+For a symmetric mixture $\tfrac12\varphi(x\mid -\mu,v) + \tfrac12\varphi(x\mid \mu,v)$, the origin is always a
+critical point, and
+\[
+p''(0) \propto \frac{\mu^2}{v} - 1 .
+\]
+Hence the density is bimodal (with a local minimum at $0$) iff $\mu^2 > v$, and unimodal otherwise. With
+$\mu=3e^{-\theta t}$ and $v_t = 1-0.75e^{-2\theta t}$, the condition $\mu^2 = v_t$ gives
+$9.75\,e^{-2\theta t} = 1$, i.e.
+\[
+t^* = \frac{\ln 9.75}{2\theta} \approx 1.1386 \quad (\theta=1).
+\]
+
+\paragraph{Numerical check.} Counting local maxima of the exact $p_t$ on a grid of 4001 points in
+$[-6,6]$, stepping $t$ by $10^{-4}$, gives a transition at $t=1.1387$, matching $t^*$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\linewidth]{c_bimodality.png}
+\caption{Exact $p_t$ at several times, including $t^*$.}
+\label{fig:bimodal}
+\end{figure}
+
+\subsubsection*{(d) Collapse under rescaled time}
+
+We simulate $\theta\in\{0.5,1,2\}$ and take snapshots at $t = s/\theta$ for $s=\theta t\in\{0, 1.35, 2.70, 4.05, 5.40\}$.
+Figure~\ref{fig:collapse} shows that the three histograms coincide at each $s$ and match the
+exact density evaluated at $\theta t = s$. All pointwise errors lie between $0.015$ and $0.031$,
+the same Monte Carlo noise level as in (b). This confirms derivation 1(d): the law of $X_t$
+depends on $\theta$ and $t$ only through $\theta t$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{d_rescaled_time.png}
+\caption{Histograms for $\theta\in\{0.5,1,2\}$ at equal rescaled times $\theta t$, with the exact density.}
+\label{fig:collapse}
+\end{figure}
+
+\section*{Part 2: Convergence to Equilibrium in Wasserstein Distance}
+
+\subsection*{The one-dimensional $W_2$ estimator}
+
+For probability measures $\mu,\nu$ on $\mathbb R$ with finite second moments,
+$W_2^2(\mu,\nu) = \inf_{\gamma\in\Gamma(\mu,\nu)} \E_{(X,Y)\sim\gamma}|X-Y|^2$, where $\Gamma(\mu,\nu)$ is the set of couplings.
+Given samples $x_1,\dots,x_n\sim\mu$ and $y_1,\dots,y_n\sim\nu$, we use
+\[
+\widehat W_2^2 = \frac1n\sum_{i=1}^n \bigl(x_{(i)} - y_{(i)}\bigr)^2,
+\]
+where $x_{(i)}$ and $y_{(i)}$ are the order statistics.
+
+\paragraph{Why sorting is optimal.} Between two sets of $n$ equally weighted points, an optimal coupling can be taken
+to be a one-to-one matching of the $x_i$ with the $y_j$. Suppose two matched pairs cross,
+i.e.\ $x_a < x_b$ but $y_a > y_b$. Then
+\[
+(x_a-y_a)^2 + (x_b-y_b)^2 - \bigl[(x_a-y_b)^2 + (x_b-y_a)^2\bigr] = 2(x_b-x_a)(y_a-y_b) > 0,
+\]
+so swapping the partners strictly lowers the cost. Hence an optimal matching has no crossings, which means it pairs
+the $i$-th smallest $x$ with the $i$-th smallest $y$. So $\widehat W_2$ is exactly the $W_2$ distance between the two
+sample sets, and it converges to $W_2(\mu,\nu)$ as $n\to\infty$. Because both samples are random, $\widehat W_2$ does not reach
+$0$ even for identical distributions; it levels off at a small noise floor that shrinks as $n$ grows.
+
+\subsection*{2(c) Proof of the contraction bound by synchronous coupling}
+
+Let $\gamma^\star$ be an optimal coupling of $p_0$ and $\pi$ (it exists since both have finite second moments), and draw
+$(X_0,Y_0)\sim\gamma^\star$, so that $\E|X_0-Y_0|^2 = W_2^2(p_0,\pi)$. Drive two copies of~\eqref{eq:ou} with the
+\emph{same} Brownian motion $W_t$:
+\[
+\dd X_t = -\theta X_t\,\dd t + \sqrt{2\theta}\,\dd W_t,\qquad
+\dd Y_t = -\theta Y_t\,\dd t + \sqrt{2\theta}\,\dd W_t .
+\]
+Subtracting, the noise cancels exactly and $D_t = X_t - Y_t$ satisfies the deterministic ODE
+\[
+\dd D_t = -\theta D_t\,\dd t \quad\Longrightarrow\quad D_t = e^{-\theta t} D_0 .
+\]
+Now $X_t\sim p_t$. Since $\pi$ is stationary (1(a)) and $Y_0\sim\pi$, also $Y_t\sim\pi$ for all $t$. Thus $(X_t,Y_t)$ is a
+coupling of $p_t$ and $\pi$, and by the definition of $W_2$ as an infimum over couplings,
+\[
+W_2^2(p_t,\pi) \le \E|X_t-Y_t|^2 = e^{-2\theta t}\,\E|X_0-Y_0|^2 = e^{-2\theta t}\,W_2^2(p_0,\pi).
+\]
+Taking square roots gives
+\[
+\boxed{W_2(p_t,\pi) \le e^{-\theta t}\,W_2(p_0,\pi).}
+\]
+
+\subsection*{2(d) Choice of the horizon $T$}
+
+The bound guarantees $W_2(p_T,\pi)\le\varepsilon$ as soon as $e^{-\theta T}W_2(p_0,\pi)\le\varepsilon$, so the smallest such time is
+\[
+T = \frac1\theta\ln\frac{W_2(p_0,\pi)}{\varepsilon}, \qquad \varepsilon = 10^{-2}.
+\]
+The sorted-sample estimate with $N = 2\times10^4$ gives $W_2(p_0,\pi) = 2.2106$, so with $\theta = 1$ we get
+$T = 5.3984$. We round up and use
+\[
+\boxed{T = 5.40}
+\]
+for the rest of the assignment, including the Part 1 figures.
+
+\subsection*{Implementation}
+
+All distances below use the sorted-sample estimator with $N=2\times10^4$ samples on each side. Samples of $p_t$ are the
+Euler--Maruyama particles from Part 1 ($\theta=1$, $\Delta t=10^{-3}$). They are compared with a fixed set of fresh
+samples from $\pi$ and from $p_0$, drawn independently of the simulation. Distances are computed at 55 equally
+spaced times in $[0,T]$.
+
+\subsubsection*{2(a) Distance to equilibrium and to the start}
+
+Figure~\ref{fig:w2} shows $W_2(p_t,\pi)$ falling from $2.21$ at $t=0$ to about $0.02$, while $W_2(p_t,p_0)$ rises from
+near $0$ to $2.21$: as the process approaches equilibrium it moves away from where it started. The curves
+cross at $t\approx0.5$, where $p_t$ is equally far from both. By $t\approx3$ both
+curves are flat, so the process has essentially reached $\pi$, and the distance back to $p_0$ equals $W_2(p_0,\pi)$.
+
+Neither curve reaches exactly $0$. At $t=0$, $W_2(p_t,p_0)$ is $0.18$ rather than $0$, and at late times $W_2(p_t,\pi)$ levels
+off at about $0.02$. Both are the noise floor of the estimator: two independent sample sets from the same
+distribution are still a positive distance apart. The floor is larger for $p_0$ because few samples fall in the
+gap between its two bumps, so the sorted values in that region line up poorly.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{a_w2_curves.png}
+\caption{Estimated $W_2(p_t,\pi)$ and $W_2(p_t,p_0)$ over $[0,T]$, $\theta=1$.}
+\label{fig:w2}
+\end{figure}
+
+\subsubsection*{2(b) Contraction bound}
+
+The estimate of the initial distance is $W_2(p_0,\pi) = 2.2106$. Figure~\ref{fig:contraction} compares the bound
+$e^{-\theta t}W_2(p_0,\pi)$ with the estimated $W_2(p_t,\pi)$, and Table~\ref{tab:contraction} lists selected values.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{b_contraction.png}
+\caption{Contraction bound (dashed) and estimated $W_2(p_t,\pi)$ (dots), $\theta=1$.}
+\label{fig:contraction}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cccc}
+\hline
+$t$ & estimate & bound & bound / estimate \\
+\hline
+0.0 & 2.208 & 2.211 & 1.00 \\
+0.9 & 0.562 & 0.899 & 1.60 \\
+1.8 & 0.105 & 0.365 & 3.49 \\
+2.7 & 0.028 & 0.149 & 5.31 \\
+3.6 & 0.025 & 0.060 & 2.41 \\
+4.5 & 0.020 & 0.025 & 1.20 \\
+5.4 & 0.017 & 0.010 & 0.58 \\
+\hline
+\end{tabular}
+\caption{Estimated $W_2(p_t,\pi)$ against the contraction bound.}
+\label{tab:contraction}
+\end{table}
+
+\paragraph{How tight is the bound?} At $t=0$ the bound equals the true distance by construction. After that the
+estimate falls faster than the bound, and the gap widens: the bound is $1.6$ times the estimate at $t=0.9$ and
+over $5$ times at $t=2.7$. So the bound has the right form (exponential decay) but is loose for this $p_0$. The
+reason is that the coupling argument in 2(c) only uses how fast two particles approach each other, which is
+rate $\theta$. For our symmetric $p_0$ the mean is already $0$ (1(a)), so the actual distance to $\pi$ shrinks faster than
+this worst case.
+
+After $t\approx3$ the ratio falls again and drops below $1$ near $T$, i.e.\ the estimate appears to break the bound.
+This is not a real violation. The true $W_2(p_t,\pi)$ keeps decreasing, but the estimate cannot go below its noise
+floor of about $0.02$ (see 2(a)), while the bound continues down to $0.01$. Checking the bound at such small distances
+would require many more samples.
+
+\subsubsection*{2(e) Collapse against $\theta t$}
+
+We repeat 2(a) for $\theta\in\{0.5,1,2\}$, sampling each run at the same values of $\theta t$ (so at $t = \theta t/\theta$).
+Figure~\ref{fig:w2collapse} plots all six curves against $\theta t$. For each distance, the three values of $\theta$
+fall on the same curve: at any $\theta t$ they differ by at most $0.016$ for $W_2(p_t,\pi)$ and $0.013$ for
+$W_2(p_t,p_0)$, which is the size of the sampling noise. This confirms once more that the law of $X_t$ depends on
+$\theta$ and $t$ only through $\theta t$ (1(d)), so every distance computed from it does too.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{e_collapse.png}
+\caption{$W_2(p_t,\pi)$ (blue) and $W_2(p_t,p_0)$ (orange) for $\theta\in\{0.5,1,2\}$ against rescaled time $\theta t$.}
+\label{fig:w2collapse}
+\end{figure}
+
+\section*{Part 3: Score Function and the Stein Identity}
+
+The score of $p_t$ is $s_t(x) = \partial_x\log p_t(x)$.
+
+\subsection*{Derivations}
+
+\subsubsection*{3(a) Fokker--Planck equation}
+
+For an SDE $\dd X_t = f(X_t,t)\,\dd t + g(t)\,\dd W_t$, the density $p_t$ of $X_t$ evolves by the Fokker--Planck equation
+\[
+\partial_t p_t(x) = -\partial_x\bigl(f(x,t)\,p_t(x)\bigr) + \tfrac12 g(t)^2\,\partial_x^2 p_t(x).
+\]
+For~\eqref{eq:ou}, $f(x,t) = -\theta x$ and $g(t)=\sqrt{2\theta}$, so $\tfrac12g^2=\theta$ and
+\[
+\partial_t p_t(x) = -\partial_x\bigl(-\theta x\,p_t(x)\bigr) + \theta\,\partial_x^2 p_t(x)
+= \theta\bigl(\partial_x(x\,p_t(x)) + \partial_x^2 p_t(x)\bigr).
+\]
+Bringing the right-hand side to the left,
+\[
+\partial_t p_t + \partial_x\Bigl(-\theta\bigl(x\,p_t + \partial_x p_t\bigr)\Bigr) = 0 ,
+\]
+which is the flux form $\partial_t p_t + \partial_x J_t = 0$ with
+\[
+\boxed{J_t(x) = -\theta\bigl(x\,p_t(x) + \partial_x p_t(x)\bigr).}
+\]
+\paragraph{Stationary flux.} For $\pi(x) = \frac{1}{\sqrt{2\pi}}e^{-x^2/2}$,
+\[
+\partial_x\pi(x) = \frac{1}{\sqrt{2\pi}}\bigl(-x\,e^{-x^2/2}\bigr) = -x\,\pi(x),
+\]
+so
+\[
+J_\pi(x) = -\theta\bigl(x\,\pi(x) + \partial_x\pi(x)\bigr) = -\theta\bigl(x\,\pi(x) - x\,\pi(x)\bigr) = 0
+\]
+for every $x$. The flux vanishes identically, so $\partial_t\pi = -\partial_x J_\pi = 0$ and $\pi$ is stationary, in agreement with 1(a).
+Note that $J_t = -\theta\,p_t\,(x + s_t(x))$, so $J_t\equiv0$ exactly when $s_t(x) = -x$, which is the score of $\pi$.
+
+\subsubsection*{3(b) Score in closed form}
+
+From 1(c), $p_t(x) = \tfrac12\varphi_1(x) + \tfrac12\varphi_2(x)$ with
+\[
+\varphi_1(x) = \varphi(x\mid -m_t, v_t),\qquad \varphi_2(x) = \varphi(x\mid m_t, v_t),\qquad m_t = 3e^{-\theta t},\quad v_t = 1-0.75e^{-2\theta t}.
+\]
+By the chain rule, $s_t(x) = \partial_x\log p_t(x) = \partial_x p_t(x)/p_t(x)$, and
+$\partial_x p_t = \tfrac12\partial_x\varphi_1 + \tfrac12\partial_x\varphi_2$.
+For a Gaussian density $\varphi(x\mid m,v) = \frac{1}{\sqrt{2\pi v}}\exp\!\bigl(-\frac{(x-m)^2}{2v}\bigr)$,
+\[
+\partial_x\varphi(x\mid m,v) = \frac{1}{\sqrt{2\pi v}}\Bigl(-\frac{x-m}{v}\Bigr)\exp\!\Bigl(-\frac{(x-m)^2}{2v}\Bigr) = -\frac{x-m}{v}\,\varphi(x\mid m,v).
+\]
+Hence $\partial_x\varphi_k = s_{k,t}\,\varphi_k$ with component scores
+\[
+s_{1,t}(x) = -\frac{x+m_t}{v_t},\qquad s_{2,t}(x) = -\frac{x-m_t}{v_t}.
+\]
+Substituting,
+\[
+s_t(x) = \frac{\tfrac12 s_{1,t}\varphi_1 + \tfrac12 s_{2,t}\varphi_2}{\tfrac12\varphi_1 + \tfrac12\varphi_2}
+= w_{1,t}(x)\,s_{1,t}(x) + w_{2,t}(x)\,s_{2,t}(x),
+\]
+with
+\[
+w_{1,t}(x) = \frac{\varphi_1(x)}{\varphi_1(x)+\varphi_2(x)},\qquad w_{2,t}(x) = \frac{\varphi_2(x)}{\varphi_1(x)+\varphi_2(x)} .
+\]
+The weights are non-negative and sum to one, so $s_t$ is a weighted average of the two component scores.
+By Bayes' rule, with the label $Z$ from 1(c),
+\[
+w_{k,t}(x) = \frac{P(Z=k)\,p(x\mid Z=k)}{p_t(x)} = P(Z=k\mid X_t = x),
+\]
+the posterior probability that a particle found at $x$ came from component $k$. Therefore
+\[
+\boxed{s_t(x) = w_{1,t}(x)\,s_{1,t}(x) + w_{2,t}(x)\,s_{2,t}(x).}
+\]
+
+As $t\to\infty$, $m_t\to0$ and $v_t\to1$, so both component scores tend to $-x$, and hence so does $s_t(x)$: the
+score of $\pi$.
+
+\subsubsection*{3(c) The score stays finite}
+
+Taken literally, $\sup_x|s_t(x)|$ is infinite for every $t$: the score grows linearly in $|x|$, and even the limiting
+score $-x$ is unbounded. What does stay finite is the score at every point and on every bounded set of $x$,
+uniformly over all $t\ge0$, including $t=0$. This is the property we prove.
+
+By 3(b), $s_t(x)$ is a weighted average of $s_{1,t}(x)$ and $s_{2,t}(x)$ with weights in $[0,1]$ that sum to one. A weighted
+average is never larger in size than the larger of the two values being averaged, so
+\[
+|s_t(x)| \le \max\bigl(|s_{1,t}(x)|,\,|s_{2,t}(x)|\bigr) = \max\Bigl(\frac{|x+m_t|}{v_t},\,\frac{|x-m_t|}{v_t}\Bigr) \le \frac{|x| + m_t}{v_t}.
+\]
+For all $t\ge0$ we have $m_t\le3$ and $v_t = 1 - 0.75e^{-2\theta t}\ge 0.25$, so
+\[
+|s_t(x)| \le 4|x| + 12 \qquad\text{for all } x\in\mathbb R,\ t\ge0 .
+\]
+Hence $\sup_{|x|\le L}|s_t(x)| \le 4L + 12$ for every $L$, with a bound that does not depend on $t$.
+
+\paragraph{Which feature of $p_0$ guarantees this.} The key quantity is the lower bound $v_t\ge 0.25$, which comes
+from the components of $p_0$ having positive variance $0.5^2$. The variance of each component starts at $0.25$
+and only grows, so the $1/v_t$ factors in the score never blow up.
+
+\paragraph{Two point masses.} If $p_0 = \tfrac12\delta_{-3}+\tfrac12\delta_{3}$, the same computation as in 1(c) gives
+components $\N(\mp3e^{-\theta t}, v_t)$ with $v_t = 1-e^{-2\theta t}$, so $v_t\to0$ as $t\to0$.
+\begin{itemize}
+\item At $t=0$, $p_0$ has no density, so $\log p_0$ and the score are not defined at all.
+\item For small $t>0$, $v_t\approx 2\theta t$, so both component scores $-(x\pm m_t)/v_t$ are huge. Take for example $x=1$.
+It is much closer to the right component, so $w_{2,t}(1)\to1$ and $s_t(1)\approx s_{2,t}(1) = (m_t-1)/v_t\approx 2/(2\theta t)\to\infty$.
+The same happens at every $x\ne\pm3$.
+\end{itemize}
+So with point masses the score is finite for each $t>0$ but not uniformly in $t$: it blows up like $1/t$ as $t\to0$. This
+matters for diffusion models, where the score must be learned and evaluated down to small $t$.
+
+\subsection*{Implementation}
+
+\subsubsection*{Density and score over time}
+
+Figure~\ref{fig:score} plots $p_t$ and the closed-form score $s_t$ from 3(b) on a common grid at $t\in\{0,0.5,1,2,T\}$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{score_plots.png}
+\caption{Density $p_t$ (left) and score $s_t$ (right) at several times; the dashed line is $-x$, the score of $\pi$.}
+\label{fig:score}
+\end{figure}
+
+The score points uphill on the density: it is positive where $p_t$ increases and negative where it decreases,
+and zero at every peak and trough.
+\begin{itemize}
+\item \textbf{$t=0$.} Inside each bump the score is close to that bump's own score, a steep line
+$-(x\pm3)/0.25$ through the bump's centre. Near $x=0$ the weights in 3(b) switch from one component to the other,
+so the score jumps sharply from about $-11$ to $+11$. This S-shaped jump marks the trough between the two modes.
+\item \textbf{$t=0.5$ and $t=1$.} The components move inwards and widen, so the lines become less steep and the
+jump at the origin becomes smaller and smoother. While the density is bimodal, the score still crosses zero three
+times (at the two peaks and at the trough).
+\item \textbf{After $t^*\approx1.14$.} The density has a single peak, so the score crosses zero only once, at $x=0$.
+By $t=2$ it is already close to a straight line.
+\item \textbf{Limit.} As $t\to\infty$, $m_t\to0$ and $v_t\to1$, so the score tends to
+\[
+s_\infty(x) = -x,
+\]
+the score of $\pi=\N(0,1)$. At $t=T$ it is indistinguishable from $-x$ on the plot.
+\end{itemize}
+
+\subsubsection*{Stein identity}
+
+\paragraph{Statement and proof.} Let $f$ be differentiable with
+\[
+f(x)\,p_t(x)\to0 \text{ as } |x|\to\infty, \qquad \E_{p_t}|f'(X)|<\infty, \qquad \E_{p_t}|f(X)\,s_t(X)|<\infty .
+\]
+Since $s_t = \partial_x p_t/p_t$, we have $f\,s_t\,p_t = f\,\partial_x p_t$. Integrating by parts,
+\[
+\E_{p_t}[f'(X)] = \int_{-\infty}^{\infty} f'(x)\,p_t(x)\,\dd x
+= \Bigl[f(x)\,p_t(x)\Bigr]_{-\infty}^{\infty} - \int_{-\infty}^{\infty} f(x)\,\partial_x p_t(x)\,\dd x
+= -\E_{p_t}[f(X)\,s_t(X)] ,
+\]
+where the boundary term vanishes by the decay condition. Because $p_t$ has Gaussian tails, the condition holds for
+any $f$ that grows at most polynomially, which includes all four test functions.
+
+\paragraph{Numerical check.} We use the $N=2\times10^4$ particles of the forward simulation at
+$t\in\{0, 1.35, 2.70, 4.05, 5.40\}$ and evaluate the exact score $s_t$ from 3(b) at each particle. For each test function we
+report the Stein residual
+\[
+R_f = \Bigl|\frac1N\sum_{i=1}^N f'(X_i) + \frac1N\sum_{i=1}^N f(X_i)\,s_t(X_i)\Bigr|
+\]
+and its standard error SE, the sample standard deviation of $f'(X_i) + f(X_i)s_t(X_i)$ divided by $\sqrt N$.
+A check passes when $R_f \le 2\,\mathrm{SE}$.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{c|cc|cc|cc|cc}
+\hline
+& \multicolumn{2}{c|}{$f=x$} & \multicolumn{2}{c|}{$f=x^2$} & \multicolumn{2}{c|}{$f=\sin x$} & \multicolumn{2}{c}{$f=e^{-x^2/2}$} \\
+$t$ & $R_f$ & SE & $R_f$ & SE & $R_f$ & SE & $R_f$ & SE \\
+\hline
+0.00 & 0.0565 & 0.0431 & 0.0712 & 0.1422 & 0.0078 & 0.0090 & 0.0001 & 0.0010 \\
+1.35 & 0.0019 & 0.0111 & 0.0194 & 0.0259 & 0.0044 & 0.0067 & 0.0027 & 0.0047 \\
+2.70 & 0.0078 & 0.0102 & 0.0041 & 0.0203 & 0.0006 & 0.0070 & 0.0052 & 0.0061 \\
+4.05 & 0.0020 & 0.0100 & 0.0259 & 0.0186 & 0.0048 & 0.0071 & 0.0000 & 0.0062 \\
+5.40 & 0.0057 & 0.0102 & 0.0244 & 0.0191 & 0.0029 & 0.0071 & 0.0018 & 0.0062 \\
+\hline
+\end{tabular}
+\caption{Stein residuals $R_f$ and standard errors. Every $R_f$ is below $2\,\mathrm{SE}$; the largest ratio is $R_f/\mathrm{SE} = 1.39$.}
+\label{tab:stein}
+\end{table}
+
+All $20$ checks pass. The ratio $R_f/\mathrm{SE}$ ranges from $0.00$ to $1.39$, which is what we expect for a quantity
+whose true mean is zero. The standard errors are largest at $t=0$, where the score is steep ($|s_0|$ reaches about $11$),
+so the terms $f(X_i)s_t(X_i)$ vary the most.
+
+\section*{Part 4: Reverse Diffusion with the Exact Score}
+
+For a forward SDE $\dd X_t = f(X_t,t)\,\dd t + g(t)\,\dd W_t$ with marginals $p_t$, Anderson's time reversal states that the
+reverse-time process satisfies
+\begin{equation}\label{eq:anderson}
+\dd X_t = \bigl[f(X_t,t) - g(t)^2 s_t(X_t)\bigr]\dd t + g(t)\,\dd\bar W_t ,
+\end{equation}
+where $\bar W$ is a Brownian motion running backwards in time and $\dd t<0$.
+
+\subsection*{Derivations}
+
+\subsubsection*{4(a) Reverse SDE for the OU process}
+
+For~\eqref{eq:ou}, $f(x,t) = -\theta x$ and $g(t) = \sqrt{2\theta}$, so $g^2 = 2\theta$. Substituting into~\eqref{eq:anderson},
+\[
+\dd X_t = \bigl[-\theta X_t - 2\theta\,s_t(X_t)\bigr]\dd t + \sqrt{2\theta}\,\dd\bar W_t
+= -\theta\bigl[X_t + 2s_t(X_t)\bigr]\dd t + \sqrt{2\theta}\,\dd\bar W_t .
+\]
+The reverse drift is
+\[
+\boxed{f_{\mathrm{rev}}(x,t) = -\theta\bigl[x + 2s_t(x)\bigr].}
+\]
+
+\subsubsection*{4(b) Discrete reverse update}
+
+We step from time $t$ down to $t-\Delta t$ with $\Delta t>0$, so
+\[
+\dd X_t \approx X_{t-\Delta t} - X_t, \qquad \dd t = -\Delta t, \qquad \dd\bar W_t \approx \bar W_{t-\Delta t} - \bar W_t \sim \N(0,\Delta t).
+\]
+The Brownian increment has variance equal to the length of the time step, so we write $\dd\bar W_t = \sqrt{\Delta t}\,Z$ with
+$Z\sim\N(0,1)$; its sign does not matter because $Z$ is symmetric. Substituting into 4(a),
+\[
+X_{t-\Delta t} - X_t = -\theta\bigl[X_t + 2s_t(X_t)\bigr](-\Delta t) + \sqrt{2\theta\Delta t}\,Z ,
+\]
+which gives
+\begin{equation}\label{eq:reverse}
+\boxed{X_{t-\Delta t} = X_t + \bigl[\theta X_t + 2\theta\,s_t(X_t)\bigr]\Delta t + \sqrt{2\theta\Delta t}\,Z .}
+\end{equation}
+The negative $\dd t$ flips the sign of \emph{both} drift terms.
+
+\paragraph{Note on the sign in the assignment.} The assignment's equation (9) has $-2\theta s_t(X_t)$ in place of
+$+2\theta s_t(X_t)$. That version is incorrect. To see this, take $p_t=\pi$, so $s_t(x)=-x$; the reverse process must then
+leave $\pi$ unchanged.
+\begin{itemize}
+\item With~\eqref{eq:reverse}: $X_{t-\Delta t} = (1-\theta\Delta t)X_t + \sqrt{2\theta\Delta t}\,Z$, whose variance is
+$(1-\theta\Delta t)^2 + 2\theta\Delta t = 1 + \theta^2\Delta t^2$. So $\pi$ is preserved up to $O(\Delta t^2)$.
+\item With the printed minus sign: $X_{t-\Delta t} = (1+3\theta\Delta t)X_t + \sqrt{2\theta\Delta t}\,Z$. Every step multiplies by
+more than $1$, and the samples blow up.
+\end{itemize}
+All results below use~\eqref{eq:reverse}.
+
+\subsubsection*{4(c) Stability near a mode}
+
+Near one mode of $p_0$ the score is approximately that of a single Gaussian, $s_t(x)\approx-(x-m)/v$, where $m$ is the
+centre and $v$ the variance of the mode. Write the deviation from the mode as $y_t = X_t - m$, so $X_t = y_t + m$.
+Substituting into~\eqref{eq:reverse},
+\[
+y_{t-\Delta t} + m = (y_t+m) + \Bigl[\theta(y_t+m) - 2\theta\,\frac{y_t}{v}\Bigr]\Delta t + \sqrt{2\theta\Delta t}\,Z ,
+\]
+so
+\[
+y_{t-\Delta t} = \underbrace{\Bigl[1 - \theta\Bigl(\frac2v - 1\Bigr)\Delta t\Bigr]}_{A}\,y_t + \theta m\,\Delta t + \sqrt{2\theta\Delta t}\,Z .
+\]
+The term $\theta m\Delta t$ is a constant shift and the noise term does not depend on $y_t$, so neither affects whether
+deviations grow. The recursion does not amplify $y_t$ when $|A|\le1$, i.e.\ $-1\le A\le1$.
+\begin{itemize}
+\item \textbf{Upper inequality} $A\le1$: $\theta\bigl(\frac2v-1\bigr)\Delta t\ge0$, which holds for every $\Delta t>0$ when $v<2$.
+\item \textbf{Lower inequality} $A\ge-1$: $\theta\bigl(\frac2v-1\bigr)\Delta t\le2$, i.e.
+\[
+\boxed{\Delta t \le \frac{2}{\theta\bigl(\frac2v-1\bigr)}.}
+\]
+\end{itemize}
+At $v=v_0=0.25$ and $\theta=1$, $\frac2v = 8$ and
+\[
+\Delta t \le \frac{2}{8-1} = \frac27 \approx 0.286 .
+\]
+The narrowest modes (smallest $v$) occur at $t=0$, so this is the most restrictive value. The default $\Delta t = 10^{-3}$
+is far below it.
+
+\subsection*{Implementation}
+
+\subsubsection*{4(a) and 4(c) Running the reverse SDE}
+
+We implement~\eqref{eq:reverse} with the exact score from 3(b), stepping $t = T, T-\Delta t, \dots, \Delta t$ with
+$\Delta t = 10^{-3}$ and $T = 5.40$, and evaluating the score at the current time $t$ in each step. The $N=2\times10^4$ particles at
+the end form the empirical law $\hat p_0$.
+
+\subsubsection*{4(b) Starting from $\pi$ instead of $p_T$}
+
+We start the reverse process from $N$ samples of $\pi=\N(0,1)$ rather than from $p_T$. This is justified by Part 2:
+the contraction bound gives $W_2(p_T,\pi)\le e^{-\theta T}W_2(p_0,\pi)$, and $T$ was chosen in 2(d) so that this is at most
+$10^{-2}$. So the starting distribution differs from the correct one, $p_T$, by at most $0.01$ in $W_2$. This is the
+error the substitution introduces.
+
+\subsubsection*{4(d) Comparing $\hat p_0$ with $p_0$}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{reverse_sde_p0.png}
+\caption{Histogram of $\hat p_0$ from the reverse SDE ($\Delta t=10^{-3}$) against the true $p_0$.}
+\label{fig:reverse}
+\end{figure}
+
+Figure~\ref{fig:reverse} shows that the reverse SDE recovers both modes, with the right locations, heights and widths.
+Starting from a single Gaussian, the reverse dynamics separates the particles into the two original modes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\hline
+& $\hat p_0$ & $p_0$ \\
+\hline
+mean & $0.005$ & $0$ \\
+variance & $9.255$ & $9.25$ \\
+\hline
+\end{tabular}
+\caption{First two moments. The true variance is $3^2+0.5^2=9.25$.}
+\label{tab:reverse}
+\end{table}
+
+Both moments agree with $p_0$ to within sampling error (the standard errors are about $0.02$ for the mean and $0.02$ for
+the variance). The estimated distance is $W_2(\hat p_0,p_0) = 0.188$. For comparison, two independent samples of size $N$
+drawn directly from $p_0$ are $0.227$ apart under the same estimator, so $\hat p_0$ is as close to $p_0$ as a sample
+from $p_0$ itself. These values are large because of how the estimator handles the two modes: the number of points
+in each mode varies randomly by about $\sqrt N/2\approx70$ between samples, and after sorting, these surplus points
+are paired with points in the other mode, about $6$ away.
+
+\subsubsection*{4(e) Convergence in $\Delta t$}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cc}
+\hline
+$\Delta t$ & $W_2(\hat p_0,p_0)$ \\
+\hline
+$10^{-3}$ & $0.188$ \\
+$5\times10^{-4}$ & $0.315$ \\
+$2.5\times10^{-4}$ & $0.149$ \\
+\hline
+\end{tabular}
+\caption{$W_2(\hat p_0,p_0)$ for the reverse SDE as $\Delta t$ is halved and quartered.}
+\label{tab:stepsize}
+\end{table}
+
+The values do not decrease with $\Delta t$: the ratios give observed orders $\log_2(0.188/0.315) = -0.74$ and
+$\log_2(0.315/0.149) = 1.08$, with no consistent pattern. So no order of convergence can be identified at these step sizes.
+The reason is that all three values are of the same size as the $W_2$ distance between two independent samples of
+$p_0$ ($0.227$, see 4(d)). The discretisation error of Euler--Maruyama at $\Delta t\le10^{-3}$ is much smaller than this sampling
+noise, so it cannot be seen. The theoretical expectation is weak order $1$, i.e.\ an error proportional to $\Delta t$.
+
+\subsubsection*{4(f) Probability flow ODE}
+
+The probability flow ODE~(10) is discretised with the explicit Euler method, again with $\dd t=-\Delta t$:
+\[
+X_{t-\Delta t} = X_t + \theta\bigl[X_t + s_t(X_t)\bigr]\Delta t .
+\]
+It starts from the same $N$ samples of $\pi$ as the SDE and has no noise term, so each particle follows a deterministic
+path. Figure~\ref{fig:flowode} compares $W_2(\hat p_0,p_0)$ for the two schemes at equal $\Delta t$, from $10^{-3}$ up to the coarse
+step $0.2$ (still below the stability limit $2/7$ from 4(c)).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{flow_ode_vs_sde.png}
+\caption{$W_2(\hat p_0,p_0)$ against $\Delta t$ for the reverse SDE and the probability flow ODE.}
+\label{fig:flowode}
+\end{figure}
+
+\begin{itemize}
+\item \textbf{ODE.} The curve is smooth: since there is no noise and every run starts from the same particles, the only
+thing that changes with $\Delta t$ is the discretisation error. For $\Delta t\le0.05$ it is flat at about $0.26$, the sampling floor of
+this particular set of particles. At $\Delta t = 0.1$ and $0.2$ it rises to $0.27$ and $0.35$, so the discretisation error becomes
+visible at coarse steps.
+\item \textbf{SDE.} Each run uses new noise, so the number of particles that end up in each mode changes from run to run,
+and the curve jumps between $0.09$ and $0.35$ with no trend in $\Delta t$. Even at $\Delta t=0.2$, its value ($0.28$) lies within
+this run-to-run range.
+\end{itemize}
+
+At the coarsest step, $\Delta t=0.2$, the SDE gives the smaller distance ($0.28$ against $0.35$). But since the SDE values
+vary by about $\pm0.1$ between runs, a single run per step size cannot show reliably which scheme is more accurate at coarse
+steps. What the plot does show is that the ODE's error grows clearly once $\Delta t$ exceeds about $0.05$, while for
+$\Delta t\le0.05$ both schemes are limited by sampling noise rather than by the step size.
+
+\section*{Part 5: Effect of Imperfect Score Estimation}
+
+We repeat the Part 4 reconstruction with an estimated score $\hat s_t$ in place of $s_t$ in~\eqref{eq:reverse}:
+\[
+X_{t-\Delta t} = X_t + \bigl[\theta X_t + 2\theta\,\hat s_t(X_t)\bigr]\Delta t + \sqrt{2\theta\Delta t}\,Z .
+\]
+All runs use the Part 4 settings ($N = 2\times10^4$, $\Delta t = 10^{-3}$, $T = 5.40$, start from $\pi$) and the same random seed, so
+they differ only in the score error. For each run we record $W_2(\hat p_0,p_0)$ against a fixed sample of $N$ points from $p_0$,
+and the Fisher divergence
+\[
+D_F = \frac1T\int_0^T \E_{p_t}\Bigl[\bigl(\hat s_t(X)-s_t(X)\bigr)^2\Bigr]\dd t ,
+\]
+where the expectation at each time is the average over the $N$ forward particles from Part 1 at $55$ equally spaced times in
+$[0,T]$, and the time integral uses the trapezoidal rule. Recall from 4(d) that two independent samples of $p_0$ are about
+$0.2$ apart under the $W_2$ estimator, so values of $W_2$ near $0.2$ mean no detectable error.
+
+\subsection*{Case A: Random error}
+
+We fix a grid of $K=200$ points evenly spaced in $[-6,6]$, draw $e_k\sim\N(0,\sigma_\epsilon^2)$ once, and set
+$\hat s_t(x) = s_t(x) + e(x)$ with $e$ the linear interpolation of the $e_k$. The same function $e$ is used at every time step and for
+every particle. We test $\sigma_\epsilon\in\{0.1, 0.3, 1, 3\}$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\hline
+$\sigma_\epsilon$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance \\
+\hline
+0.1 & 0.315 & 0.005 & $-0.030$ & 9.244 \\
+0.3 & 0.445 & 0.047 & $-0.084$ & 9.212 \\
+1.0 & 0.875 & 0.527 & $-0.304$ & 9.054 \\
+3.0 & 1.649 & 4.740 & $-0.872$ & 8.316 \\
+\hline
+\end{tabular}
+\caption{Case A results. The true mean and variance are $0$ and $9.25$.}
+\label{tab:caseA}
+\end{table}
+
+The reconstruction error grows steadily with $\sigma_\epsilon$. The main visible effect is a shift of the mean to the left,
+reaching $-0.87$ at $\sigma_\epsilon=3$. This is because a single fixed draw of $e$ is not zero on average where the particles are:
+locally it acts like a bias, and in this realization it pushes particles towards the left mode. A different draw of the $e_k$
+would push in a different direction. Since $D_F$ is an average of $e(x)^2$, it grows like $\sigma_\epsilon^2$.
+
+\subsection*{Case B: Systematic bias}
+
+We set $\hat s_t(x) = s_t(x) + c$ for $c\in\{\pm0.2,\pm0.5,\pm1\}$. Here $\hat s_t - s_t = c$ everywhere, so $D_F = c^2$ exactly.
+
+% Case B analytic prediction to be added from derivation notes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\hline
+$c$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance \\
+\hline
+$-1.0$ & 4.540 & 1.00 & $-3.692$ & 0.534 \\
+$-0.5$ & 3.637 & 0.25 & $-2.673$ & 3.901 \\
+$-0.2$ & 2.235 & 0.04 & $-1.252$ & 8.013 \\
+$0.2$ & 2.186 & 0.04 & $1.265$ & 7.974 \\
+$0.5$ & 3.602 & 0.25 & $2.692$ & 3.806 \\
+$1.0$ & 4.497 & 1.00 & $3.700$ & 0.499 \\
+\hline
+\end{tabular}
+\caption{Case B results.}
+\label{tab:caseB}
+\end{table}
+
+The mean of $\hat p_0$ moves in the direction of the sign of $c$, and the effect is symmetric in $c$. Even the smallest
+bias, $c=\pm0.2$, shifts the mean by about $1.26$ and gives $W_2\approx2.2$. The variance also drops sharply, to about $0.5$ at
+$|c|=1$. Both effects come from the two modes: a positive bias pushes particles to the right while they are still
+choosing a mode, so more of them end up in the right mode. The mean of a two-mode law with modes at $\pm3$ is
+$3(w_+-w_-)$, so a mean of $1.26$ means about $71\%$ of the particles in the right mode. At $|c|=1$ almost all particles end in one
+mode, whose own variance is close to $0.25$, plus the extra spread from the bias.
+
+\subsection*{Case C: Multiplicative error}
+
+We set $\hat s_t(x) = (1+\alpha)\,s_t(x)$ for $\alpha\in\{\pm0.1,\pm0.25,\pm0.5\}$. Then $D_F = \alpha^2\cdot\frac1T\int_0^T\E_{p_t}[s_t(X)^2]\,\dd t$,
+which is close to $\alpha^2$ here.
+
+% Case C analytic prediction to be added from derivation notes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\hline
+$\alpha$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance \\
+\hline
+$-0.50$ & 1.344 & 0.250 & 0.028 & 18.004 \\
+$-0.25$ & 0.216 & 0.063 & 0.021 & 10.090 \\
+$-0.10$ & 0.177 & 0.010 & 0.008 & 9.442 \\
+$0.10$ & 0.203 & 0.010 & 0.004 & 9.162 \\
+$0.25$ & 0.260 & 0.063 & $-0.003$ & 9.091 \\
+$0.50$ & 0.257 & 0.250 & 0.003 & 9.062 \\
+\hline
+\end{tabular}
+\caption{Case C results.}
+\label{tab:caseC}
+\end{table}
+
+The mean stays at $0$, since scaling the score keeps the drift symmetric. The variance changes instead: when the score
+is too weak ($\alpha<0$) the variance is too large ($18.0$ at $\alpha=-0.5$), and when it is too strong ($\alpha>0$) the variance is
+slightly too small ($9.06$ at $\alpha=0.5$). The effect is not symmetric in $\alpha$: a weaker score inflates the variance much more
+than a stronger score shrinks it. For $|\alpha|\le0.25$, $W_2$ stays near the noise floor of the estimator.
+
+\subsection*{Comparing the three cases}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{w2_vs_fisher.png}
+\caption{$W_2(\hat p_0,p_0)$ against $D_F$ for all runs of the three cases.}
+\label{fig:fisher}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{w2_vs_parameter.png}
+\caption{$W_2(\hat p_0,p_0)$ against the native error parameter of each case.}
+\label{fig:native}
+\end{figure}
+
+Figure~\ref{fig:fisher} shows that $D_F$ alone does not determine the reconstruction error. The three cases form separate
+groups. At similar Fisher divergence, the constant bias is by far the most harmful: $c=\pm0.2$ ($D_F=0.04$) gives $W_2\approx2.2$,
+while the random error at $D_F=0.047$ gives $0.45$ and the multiplicative error at $D_F=0.063$ gives about $0.2$--$0.26$. Even the
+random error with $D_F = 4.7$ ($\sigma_\epsilon=3$) gives a smaller $W_2$ ($1.65$) than a bias with $D_F=0.04$.
+
+The difference is in how the error acts on the two modes. A constant bias pushes every particle the same way, so it
+moves probability from one mode to the other, which costs a distance of about $6$ per moved particle. A multiplicative
+error keeps the drift symmetric, so the modes keep equal weight and only their spread changes. The random error lies in
+between: it is zero on average over the whole grid, but a single fixed draw has some net bias where the particles are.
+So an error that is small in the $D_F$ sense can still be very harmful if it is systematic.
+
+\end{document}

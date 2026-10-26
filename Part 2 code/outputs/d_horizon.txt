@@ -1,0 +1,3 @@
+W2(p0, pi) = 2.21060
+T = ln(W2(p0, pi) / 0.01) / theta = 5.39844
+T used (rounded up) = 5.40

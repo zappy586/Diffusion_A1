@@ -1,0 +1,2 @@
+analytic threshold t* = ln(9.75)/(2 theta) = 1.13863
+numerical threshold (first t with one mode on grid) = 1.13870

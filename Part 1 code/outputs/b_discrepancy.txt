@@ -1,0 +1,6 @@
+t = 0.00  max |hist - p_t| = 0.0244
+t = 1.35  max |hist - p_t| = 0.0149
+t = 2.70  max |hist - p_t| = 0.0210
+t = 4.05  max |hist - p_t| = 0.0248
+t = 5.40  max |hist - p_t| = 0.0295
+largest discrepancy = 0.0295

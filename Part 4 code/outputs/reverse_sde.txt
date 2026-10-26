@@ -1,0 +1,4 @@
+mean      p0_hat = 0.0049   p0 = 0
+variance  p0_hat = 9.2545   p0 = 9.2500
+W2(p0_hat, p0)   = 0.1884
+W2 between two independent p0 samples = 0.2273

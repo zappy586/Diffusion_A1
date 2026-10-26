@@ -1,0 +1,15 @@
+theta = 0.5  theta*t = 0.00  max |hist - p| = 0.0244
+theta = 0.5  theta*t = 1.35  max |hist - p| = 0.0306
+theta = 0.5  theta*t = 2.70  max |hist - p| = 0.0265
+theta = 0.5  theta*t = 4.05  max |hist - p| = 0.0256
+theta = 0.5  theta*t = 5.40  max |hist - p| = 0.0206
+theta = 1.0  theta*t = 0.00  max |hist - p| = 0.0244
+theta = 1.0  theta*t = 1.35  max |hist - p| = 0.0149
+theta = 1.0  theta*t = 2.70  max |hist - p| = 0.0210
+theta = 1.0  theta*t = 4.05  max |hist - p| = 0.0248
+theta = 1.0  theta*t = 5.40  max |hist - p| = 0.0295
+theta = 2.0  theta*t = 0.00  max |hist - p| = 0.0244
+theta = 2.0  theta*t = 1.35  max |hist - p| = 0.0261
+theta = 2.0  theta*t = 2.70  max |hist - p| = 0.0216
+theta = 2.0  theta*t = 4.05  max |hist - p| = 0.0258
+theta = 2.0  theta*t = 5.40  max |hist - p| = 0.0204
