@@ -9,7 +9,8 @@ for three error models, and records the reconstruction error `W2(p̂0, p0)` and 
 Part 5 code/
 ├── scripts/
 │   ├── ou.py                 parameters, exact score, forward and reverse simulation, W2, D_F
-│   └── task_score_errors.py  runs cases A, B, C, writes the table and both plots
+│   ├── task_score_errors.py  runs cases A, B, C, writes the table and both plots
+│   └── task_predictions.py   evaluates the analytic predictions for cases B and C
 └── outputs/                  figures (.png) and numbers (.txt)
 ```
 
@@ -39,6 +40,11 @@ uv sync
 uv run python "Part 5 code/scripts/task_score_errors.py"
 ```
 
+```bash
+uv run python "Part 5 code/scripts/task_predictions.py"
+```
+
 | Script | Outputs |
 |---|---|
 | `task_score_errors.py` | `w2_vs_fisher.png`, `w2_vs_parameter.png`, `score_errors.txt` |
+| `task_predictions.py` | `predictions.txt` |

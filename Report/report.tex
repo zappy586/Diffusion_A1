@@ -4,7 +4,7 @@
 \usepackage{bm}
 \usepackage{graphicx}
 \usepackage{float}
-\graphicspath{{"../Part 1 code/outputs/"}{"../Part 2 code/outputs/"}{"../Part 3 code/outputs/"}{"../Part 4 code/outputs/"}{"../Part 5 code/outputs/"}}
+\graphicspath{{"../Part 1 code/outputs/"}{"../Part 2 code/outputs/"}{"../Part 3 code/outputs/"}{"../Part 4 code/outputs/"}{"../Part 5 code/outputs/"}{"../Part 6 code/outputs/"}}
 
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Var}{\operatorname{Var}}
@@ -12,7 +12,7 @@
 \newcommand{\dd}{\mathrm{d}}
 
 \title{Assignment 1}
-\author{}
+\author{Mohd Zeeshan \\ Roll no.\ 2025901020}
 \date{}
 
 \begin{document}
@@ -769,7 +769,7 @@ noise, so it cannot be seen. The theoretical expectation is weak order $1$, i.e.
 
 \subsubsection*{4(f) Probability flow ODE}
 
-The probability flow ODE~(10) is discretised with the explicit Euler method, again with $\dd t=-\Delta t$:
+The probability flow ODE $\dd X_t/\dd t = -\theta X_t - \theta s_t(X_t)$ (equation (10) of the assignment) is discretised with the explicit Euler method, again with $\dd t=-\Delta t$:
 \[
 X_{t-\Delta t} = X_t + \theta\bigl[X_t + s_t(X_t)\bigr]\Delta t .
 \]
@@ -801,25 +801,19 @@ $\Delta t\le0.05$ both schemes are limited by sampling noise rather than by the 
 
 \section*{Part 5: Effect of Imperfect Score Estimation}
 
-We repeat the Part 4 reconstruction with an estimated score $\hat s_t$ in place of $s_t$ in~\eqref{eq:reverse}:
+We repeat the Part 4 reconstruction (same $N$, $\Delta t$, $T$, seed, start from $\pi$) with an estimated score $\hat s_t$ in~\eqref{eq:reverse}:
 \[
 X_{t-\Delta t} = X_t + \bigl[\theta X_t + 2\theta\,\hat s_t(X_t)\bigr]\Delta t + \sqrt{2\theta\Delta t}\,Z .
 \]
-All runs use the Part 4 settings ($N = 2\times10^4$, $\Delta t = 10^{-3}$, $T = 5.40$, start from $\pi$) and the same random seed, so
-they differ only in the score error. For each run we record $W_2(\hat p_0,p_0)$ against a fixed sample of $N$ points from $p_0$,
-and the Fisher divergence
-\[
-D_F = \frac1T\int_0^T \E_{p_t}\Bigl[\bigl(\hat s_t(X)-s_t(X)\bigr)^2\Bigr]\dd t ,
-\]
-where the expectation at each time is the average over the $N$ forward particles from Part 1 at $55$ equally spaced times in
-$[0,T]$, and the time integral uses the trapezoidal rule. Recall from 4(d) that two independent samples of $p_0$ are about
-$0.2$ apart under the $W_2$ estimator, so values of $W_2$ near $0.2$ mean no detectable error.
+For each run we record $W_2(\hat p_0,p_0)$ and the Fisher divergence
+$D_F = \frac1T\int_0^T \E_{p_t}\bigl[(\hat s_t(X)-s_t(X))^2\bigr]\dd t$, where $\E_{p_t}$ is the average over the Part 1 forward particles at
+55 equally spaced times and the time integral uses the trapezoidal rule. As in 4(d), $W_2\approx0.2$ is the noise floor of the
+estimator.
 
 \subsection*{Case A: Random error}
 
-We fix a grid of $K=200$ points evenly spaced in $[-6,6]$, draw $e_k\sim\N(0,\sigma_\epsilon^2)$ once, and set
-$\hat s_t(x) = s_t(x) + e(x)$ with $e$ the linear interpolation of the $e_k$. The same function $e$ is used at every time step and for
-every particle. We test $\sigma_\epsilon\in\{0.1, 0.3, 1, 3\}$.
+On a grid of $K=200$ points in $[-6,6]$ we draw $e_k\sim\N(0,\sigma_\epsilon^2)$ once, and set $\hat s_t = s_t + e$, with $e$ the linear interpolation of
+the $e_k$, held fixed for the whole run.
 
 \begin{table}[H]
 \centering
@@ -833,20 +827,54 @@ $\sigma_\epsilon$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance \\
 3.0 & 1.649 & 4.740 & $-0.872$ & 8.316 \\
 \hline
 \end{tabular}
-\caption{Case A results. The true mean and variance are $0$ and $9.25$.}
+\caption{Case A. The true mean and variance are $0$ and $9.25$.}
 \label{tab:caseA}
 \end{table}
 
-The reconstruction error grows steadily with $\sigma_\epsilon$. The main visible effect is a shift of the mean to the left,
-reaching $-0.87$ at $\sigma_\epsilon=3$. This is because a single fixed draw of $e$ is not zero on average where the particles are:
-locally it acts like a bias, and in this realization it pushes particles towards the left mode. A different draw of the $e_k$
-would push in a different direction. Since $D_F$ is an average of $e(x)^2$, it grows like $\sigma_\epsilon^2$.
+$W_2$ grows with $\sigma_\epsilon$, and $D_F$ grows like $\sigma_\epsilon^2$. A single fixed draw of $e$ is not zero on average where the
+particles are, so it acts locally like a bias; in this draw it shifts the mean to the left.
 
 \subsection*{Case B: Systematic bias}
 
-We set $\hat s_t(x) = s_t(x) + c$ for $c\in\{\pm0.2,\pm0.5,\pm1\}$. Here $\hat s_t - s_t = c$ everywhere, so $D_F = c^2$ exactly.
+Here $\hat s_t = s_t + c$, so $D_F = c^2$ exactly.
 
-% Case B analytic prediction to be added from derivation notes.
+\paragraph{Prediction.} Take a single Gaussian mode, $p_t = \N(m_t,v_t)$ with $m_t = m_0e^{-\theta t}$ and $v_t = 1-(1-v_0)e^{-2\theta t}$, so
+$s_t(x) = -(x-m_t)/v_t$.
+\begin{enumerate}
+\item Substituting $\hat s_t = s_t + c$ into the update and taking expectations, with $\mu_t = \E[X_t]$,
+\[
+\mu_{t-\Delta t} = \mu_t + \theta\mu_t\Delta t + 2\theta\,\E[s_t(X_t)]\,\Delta t + 2\theta c\,\Delta t,
+\qquad \E[s_t(X_t)] = -\frac{\mu_t - m_t}{v_t}.
+\]
+This expectation is $0$ only when $\mu_t = m_t$, i.e.\ when the particles follow $p_t$. Once the bias has moved them, the true score
+pulls them back, so the term must be kept.
+\item The correct mean satisfies the same recursion with $c=0$ and $\mu_t = m_t$: $\ m_{t-\Delta t} = m_t + \theta m_t\Delta t$.
+\item Subtracting, the shift $\delta_t = \mu_t - m_t$ satisfies
+\[
+\delta_{t-\Delta t} = \delta_t + \theta\Bigl(1-\frac2{v_t}\Bigr)\delta_t\Delta t + 2\theta c\,\Delta t .
+\]
+\item Rearranging, $(\delta_t - \delta_{t-\Delta t})/\Delta t = \theta(2/v_t - 1)\delta_t - 2\theta c$. Letting $\Delta t\to0$,
+\[
+\frac{\dd\delta}{\dd t} = \theta\Bigl(\frac2{v_t}-1\Bigr)\delta - 2\theta c, \qquad \delta_T = 0 ,
+\]
+since the run starts from $\pi\approx p_T$ at $t=T$.
+\item Integrating factor $e^{-\theta t}/v_t$. Using $\dd v_t/\dd t = 2\theta(1-v_t)$,
+\[
+\frac{\dd}{\dd t}\Bigl(\frac{e^{-\theta t}}{v_t}\Bigr) = \frac{e^{-\theta t}}{v_t}\Bigl(-\theta - \frac{2\theta(1-v_t)}{v_t}\Bigr)
+= -\theta\Bigl(\frac2{v_t}-1\Bigr)\frac{e^{-\theta t}}{v_t},
+\]
+so
+\[
+\frac{\dd}{\dd t}\Bigl(\frac{e^{-\theta t}}{v_t}\,\delta_t\Bigr) = \frac{e^{-\theta t}}{v_t}\Bigl(\frac{\dd\delta}{\dd t} - \theta\Bigl(\frac2{v_t}-1\Bigr)\delta_t\Bigr)
+= -2\theta c\,\frac{e^{-\theta t}}{v_t} .
+\]
+\item Integrating from $0$ to $T$ and using $\delta_T = 0$: $\ -\delta_0/v_0 = -2\theta c\int_0^T e^{-\theta s}/v_s\,\dd s$, i.e.
+\[
+\boxed{\delta_0 = 2\theta c\,v_0\int_0^T \frac{e^{-\theta s}}{v_s}\,\dd s \approx 0.76\,c}
+\qquad (v_0 = 0.25,\ \theta=1,\ T=5.40).
+\]
+\end{enumerate}
+A constant bias shifts the mean of the reconstruction in the direction of $c$, by an amount proportional to $c$.
 
 \begin{table}[H]
 \centering
@@ -862,53 +890,78 @@ $0.5$ & 3.602 & 0.25 & $2.692$ & 3.806 \\
 $1.0$ & 4.497 & 1.00 & $3.700$ & 0.499 \\
 \hline
 \end{tabular}
-\caption{Case B results.}
+\caption{Case B.}
 \label{tab:caseB}
 \end{table}
 
-The mean of $\hat p_0$ moves in the direction of the sign of $c$, and the effect is symmetric in $c$. Even the smallest
-bias, $c=\pm0.2$, shifts the mean by about $1.26$ and gives $W_2\approx2.2$. The variance also drops sharply, to about $0.5$ at
-$|c|=1$. Both effects come from the two modes: a positive bias pushes particles to the right while they are still
-choosing a mode, so more of them end up in the right mode. The mean of a two-mode law with modes at $\pm3$ is
-$3(w_+-w_-)$, so a mean of $1.26$ means about $71\%$ of the particles in the right mode. At $|c|=1$ almost all particles end in one
-mode, whose own variance is close to $0.25$, plus the extra spread from the bias.
+\paragraph{Test.} The direction is confirmed: the mean moves with the sign of $c$, symmetrically. The size is much larger
+than $0.76\,c$ (e.g.\ $1.26$ at $c=0.2$) and not linear in $c$. The prediction covers a single mode; with two modes the bias also
+moves particles from one mode to the other. A mean of $1.26$ corresponds to about $71\%$ of the particles in the right mode,
+and at $|c|=1$ almost all particles end up in one mode, which is why the variance drops to about $0.5$.
 
 \subsection*{Case C: Multiplicative error}
 
-We set $\hat s_t(x) = (1+\alpha)\,s_t(x)$ for $\alpha\in\{\pm0.1,\pm0.25,\pm0.5\}$. Then $D_F = \alpha^2\cdot\frac1T\int_0^T\E_{p_t}[s_t(X)^2]\,\dd t$,
-which is close to $\alpha^2$ here.
+Here $\hat s_t = (1+\alpha)s_t$, so $D_F = \alpha^2\,\frac1T\int_0^T\E_{p_t}[s_t^2]\,\dd t\approx\alpha^2$.
 
-% Case C analytic prediction to be added from derivation notes.
+\paragraph{Prediction.} Take the same single Gaussian mode, so $\hat s_t(x) = -(1+\alpha)(x-m_t)/v_t$.
+\begin{enumerate}
+\item Let $y_t = X_t - m_t$. Substituting into the update and using $m_{t-\Delta t} = m_t + \theta m_t\Delta t$ (step 2 of Case B), the
+$m_t$ terms cancel:
+\[
+y_{t-\Delta t} = (1 + a_t\Delta t)\,y_t + \sqrt{2\theta\Delta t}\,Z, \qquad a_t = \theta\Bigl(1-\frac{2(1+\alpha)}{v_t}\Bigr).
+\]
+\item The mean of $y$ starts at $0$ and stays $0$. For the variance $w_t = \E[y_t^2]$, using that $Z$ is independent of $y_t$ with $\E Z^2=1$,
+\[
+w_{t-\Delta t} = (1+a_t\Delta t)^2 w_t + 2\theta\Delta t = w_t + 2a_tw_t\Delta t + 2\theta\Delta t + O(\Delta t^2).
+\]
+\item Letting $\Delta t\to0$,
+\[
+\frac{\dd w}{\dd t} = -2a_tw - 2\theta = 2\theta\Bigl(\frac{2(1+\alpha)}{v_t}-1\Bigr)w - 2\theta, \qquad w_T = 1 .
+\]
+\item Try $w_t = v_t/(1+2\alpha)$. With $\dd v_t/\dd t = 2\theta(1-v_t)$:
+\[
+\text{left} = \frac{2\theta(1-v_t)}{1+2\alpha}, \qquad
+\text{right} = \frac{2\theta\bigl(2(1+\alpha)-v_t\bigr) - 2\theta(1+2\alpha)}{1+2\alpha} = \frac{2\theta(1-v_t)}{1+2\alpha} .
+\]
+So it is a solution.
+\item The difference $u_t = w_t - v_t/(1+2\alpha)$ solves the equation without the $-2\theta$ term, so
+$u_0 = u_T\exp\bigl(-\int_0^T 2\theta\,(2(1+\alpha)/v_s-1)\,\dd s\bigr)$. Since $v_s\le1$, the exponent is at most $-2\theta(1+2\alpha)T$, so for $\alpha>-\tfrac12$
+the difference is negligible after a long run:
+\[
+\boxed{\Var(\hat p_0) \approx \frac{v_0}{1+2\alpha}, \qquad \alpha>-\tfrac12 .}
+\]
+\end{enumerate}
+A score that is too strong ($\alpha>0$) shrinks the variance; one that is too weak ($\alpha<0$) inflates it, and for $\alpha\le-\tfrac12$ the
+variance is not controlled.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{ccccc}
+\begin{tabular}{cccccc}
 \hline
-$\alpha$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance \\
+$\alpha$ & $W_2(\hat p_0,p_0)$ & $D_F$ & mean & variance & predicted $9+0.25/(1+2\alpha)$ \\
 \hline
-$-0.50$ & 1.344 & 0.250 & 0.028 & 18.004 \\
-$-0.25$ & 0.216 & 0.063 & 0.021 & 10.090 \\
-$-0.10$ & 0.177 & 0.010 & 0.008 & 9.442 \\
-$0.10$ & 0.203 & 0.010 & 0.004 & 9.162 \\
-$0.25$ & 0.260 & 0.063 & $-0.003$ & 9.091 \\
-$0.50$ & 0.257 & 0.250 & 0.003 & 9.062 \\
+$-0.50$ & 1.344 & 0.250 & 0.028 & 18.004 & -- \\
+$-0.25$ & 0.216 & 0.063 & 0.021 & 10.090 & 9.50 \\
+$-0.10$ & 0.177 & 0.010 & 0.008 & 9.442 & 9.31 \\
+$0.10$ & 0.203 & 0.010 & 0.004 & 9.162 & 9.21 \\
+$0.25$ & 0.260 & 0.063 & $-0.003$ & 9.091 & 9.17 \\
+$0.50$ & 0.257 & 0.250 & 0.003 & 9.062 & 9.13 \\
 \hline
 \end{tabular}
-\caption{Case C results.}
+\caption{Case C. For two modes at $\pm3$, the total variance is about $9$ plus the within-mode variance $0.25/(1+2\alpha)$.}
 \label{tab:caseC}
 \end{table}
 
-The mean stays at $0$, since scaling the score keeps the drift symmetric. The variance changes instead: when the score
-is too weak ($\alpha<0$) the variance is too large ($18.0$ at $\alpha=-0.5$), and when it is too strong ($\alpha>0$) the variance is
-slightly too small ($9.06$ at $\alpha=0.5$). The effect is not symmetric in $\alpha$: a weaker score inflates the variance much more
-than a stronger score shrinks it. For $|\alpha|\le0.25$, $W_2$ stays near the noise floor of the estimator.
+\paragraph{Test.} The mean stays at $0$. The variance moves in the predicted direction for every $\alpha$: above $9.25$ for $\alpha<0$ and
+below for $\alpha>0$. The size is close for $\alpha>0$ and underestimated for $\alpha<0$, where a weaker score also separates the two
+modes less cleanly; at $\alpha=-0.5$ the variance reaches $18.0$.
 
-\subsection*{Comparing the three cases}
+\subsection*{Comparing the cases}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{w2_vs_fisher.png}
-\caption{$W_2(\hat p_0,p_0)$ against $D_F$ for all runs of the three cases.}
+\caption{$W_2(\hat p_0,p_0)$ against $D_F$ for all runs.}
 \label{fig:fisher}
 \end{figure}
 
@@ -919,15 +972,122 @@ than a stronger score shrinks it. For $|\alpha|\le0.25$, $W_2$ stays near the no
 \label{fig:native}
 \end{figure}
 
-Figure~\ref{fig:fisher} shows that $D_F$ alone does not determine the reconstruction error. The three cases form separate
-groups. At similar Fisher divergence, the constant bias is by far the most harmful: $c=\pm0.2$ ($D_F=0.04$) gives $W_2\approx2.2$,
-while the random error at $D_F=0.047$ gives $0.45$ and the multiplicative error at $D_F=0.063$ gives about $0.2$--$0.26$. Even the
-random error with $D_F = 4.7$ ($\sigma_\epsilon=3$) gives a smaller $W_2$ ($1.65$) than a bias with $D_F=0.04$.
+$D_F$ alone does not determine the reconstruction error. At similar $D_F$, the bias is by far the most harmful
+($W_2\approx2.2$ at $D_F=0.04$), against $0.45$ for the random error ($D_F=0.047$) and about $0.2$ for the multiplicative error ($D_F=0.063$).
+A bias pushes every particle the same way and moves probability between the modes, $6$ apart. A multiplicative error
+keeps the drift symmetric, so only the spread of each mode changes. The random error lies in between.
 
-The difference is in how the error acts on the two modes. A constant bias pushes every particle the same way, so it
-moves probability from one mode to the other, which costs a distance of about $6$ per moved particle. A multiplicative
-error keeps the drift symmetric, so the modes keep equal weight and only their spread changes. The random error lies in
-between: it is zero on average over the whole grid, but a single fixed draw has some net bias where the particles are.
-So an error that is small in the $D_F$ sense can still be very harmful if it is systematic.
+\section*{Part 6: Application Challenge, Noisy Sensor Measurements}
+
+We observe $Y^{(i)} = X_0^{(i)} + \eta^{(i)}$, $i=1,\dots,N$, with $X_0^{(i)}\sim p_0$ and $\eta^{(i)}\sim\N(0,\sigma^2)$ independent, where $\sigma=\sigma_{\mathrm{sensor}}$.
+The target is $p_0$.
+
+\subsection*{Derivations}
+
+\subsubsection*{6(a) Rescaling to a forward marginal}
+
+By 1(b), $X_t = e^{-\theta t}X_0 + \sqrt{1-e^{-2\theta t}}\,Z$ with $Z\sim\N(0,1)$ independent of $X_0$. For $a>0$,
+\[
+aY = aX_0 + a\eta, \qquad a\eta\sim\N(0,a^2\sigma^2) \text{ independent of } X_0 .
+\]
+Both are ``$X_0$ scaled, plus independent Gaussian noise'', so $aY$ has the law $p_{t^*}$ (for any $p_0$) if the scale and the noise
+variance match:
+\[
+a = e^{-\theta t^*}, \qquad a^2\sigma^2 = 1 - e^{-2\theta t^*} .
+\]
+Substituting the first into the second, $e^{-2\theta t^*}\sigma^2 = 1 - e^{-2\theta t^*}$, i.e.\ $e^{-2\theta t^*}(1+\sigma^2) = 1$. Hence
+\[
+\boxed{t^* = \frac{\ln(1+\sigma^2)}{2\theta}, \qquad a = e^{-\theta t^*} = \frac{1}{\sqrt{1+\sigma^2}} .}
+\]
+
+\subsubsection*{6(b) Sign and behaviour of $t^*$}
+
+For $\sigma>0$, $1+\sigma^2>1$, so $\ln(1+\sigma^2)>0$ and $t^*>0$. Since $\ln(1+\sigma^2)$ is increasing in $\sigma$, $t^*$ grows with the sensor noise: a
+noisier sensor corresponds to a later, more diffused time. For small noise $t^*\approx\sigma^2/(2\theta)\to0$, and for large noise
+$t^*\approx\ln\sigma/\theta\to\infty$, so $t^*$ grows only logarithmically. At the same time $a\to0$: the signal is scaled down more and more.
+
+\subsubsection*{6(c) Why $Y$ cannot be used without the factor $a$}
+
+The reverse process started at time $t$ is only correct if its starting points have law $p_t$. Without rescaling, $Y = X_0 + \eta$
+keeps the signal $X_0$ at full scale, while every $X_t$ carries it scaled by $e^{-\theta t}$. For our $p_0$, $Y$ is a mixture of
+$\N(\pm3,\,0.25+\sigma^2)$, whereas $p_t$ is a mixture of $\N(\pm3e^{-\theta t},\,v_t)$. Matching the mode positions requires $e^{-\theta t} = 1$, i.e.\ $t=0$,
+but then $v_0 = 0.25 \ne 0.25 + \sigma^2$. So for $\sigma>0$ there is no time $t$ at which $Y$ has law $p_t$. Starting the reverse process
+from $Y$ at any $t$ gives it inputs that are too wide (if $t$ is small) or too far apart (if $t$ is large), and the score of $p_t$ then
+pushes them to the wrong places.
+
+\subsubsection*{Task (2): Linear shrinkage $\lambda$}
+
+Treat $X_0$ as Gaussian with the correct first two moments, $\E[X_0] = 0$ and $\Var(X_0) = s_0^2 = 3^2 + 0.5^2 = 9.25$. For
+$\hat X = \lambda Y = \lambda X_0 + \lambda\eta$, using that $X_0$ and $\eta$ are independent with mean $0$,
+\[
+\E\bigl[(\lambda Y - X_0)^2\bigr] = \E\bigl[((\lambda-1)X_0 + \lambda\eta)^2\bigr] = (\lambda-1)^2s_0^2 + \lambda^2\sigma^2 .
+\]
+Setting the derivative in $\lambda$ to zero, $2(\lambda-1)s_0^2 + 2\lambda\sigma^2 = 0$, so
+\[
+\boxed{\lambda = \frac{s_0^2}{s_0^2+\sigma^2} = \frac{9.25}{9.25+\sigma^2} .}
+\]
+(Because the mean is $0$, no intercept is needed.)
+
+\subsection*{Tasks}
+
+\paragraph{Setup.} For each $N\in\{1000, 5000, 20000\}$ and $\sigma\in\{0.1, 0.3, 1, 3\}$ (a factor of $30$), we draw $N$ observations $Y$ and
+compare three reconstructions:
+\begin{enumerate}
+\item the raw observations $Y$;
+\item the shrinkage estimate $\lambda Y$;
+\item reverse diffusion: $X_{t^*} = aY$, integrated with~\eqref{eq:reverse} and the exact score from $t^*$ down to $0$.
+\end{enumerate}
+\textbf{Assumptions.} For reverse diffusion we use steps of size $t^*/\lceil t^*/10^{-3}\rceil\le10^{-3}$, so that the run ends exactly at
+$t=0$. For $\sigma=0.1$, $t^* = 0.005$, so this is only $5$ steps. Each reconstruction is compared by $W_2$ with a fixed reference sample of $N$
+points from $p_0$, using one run per $(N,\sigma)$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cccccc}
+\hline
+$N$ & $\sigma$ & $t^*$ & raw $Y$ & shrinkage & reverse diffusion \\
+\hline
+1000 & 0.1 & 0.005 & 0.075 & 0.073 & 0.071 \\
+1000 & 0.3 & 0.043 & 0.125 & 0.112 & 0.065 \\
+1000 & 1.0 & 0.347 & 0.660 & 0.588 & 0.114 \\
+1000 & 3.0 & 1.151 & 2.121 & 1.394 & 0.457 \\
+\hline
+5000 & 0.1 & 0.005 & 0.051 & 0.053 & 0.050 \\
+5000 & 0.3 & 0.043 & 0.095 & 0.101 & 0.046 \\
+5000 & 1.0 & 0.347 & 0.608 & 0.589 & 0.093 \\
+5000 & 3.0 & 1.151 & 1.987 & 1.448 & 0.235 \\
+\hline
+20000 & 0.1 & 0.005 & 0.175 & 0.175 & 0.176 \\
+20000 & 0.3 & 0.043 & 0.184 & 0.184 & 0.176 \\
+20000 & 1.0 & 0.347 & 0.623 & 0.593 & 0.169 \\
+20000 & 3.0 & 1.151 & 2.008 & 1.419 & 0.203 \\
+\hline
+\end{tabular}
+\caption{$W_2(\hat p,p_0)$ for the three reconstructions.}
+\label{tab:sensor}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{sensor_w2.png}
+\caption{$W_2(\hat p,p_0)$ against $\sigma_{\mathrm{sensor}}$ for each $N$.}
+\label{fig:sensor}
+\end{figure}
+
+As in 4(d), $W_2$ between two independent samples of $p_0$ is not zero, and with two modes it varies a lot from sample to sample
+($0.57$, $0.13$ and $0.23$ for the three values of $N$ in our runs). Differences of this size are therefore not meaningful; the
+conclusions below rely only on larger differences.
+\begin{itemize}
+\item \textbf{Small noise} ($\sigma\le0.3$): all three methods are equally good, since $Y$ is already close to $X_0$.
+\item \textbf{Raw $Y$:} the error grows roughly in proportion to $\sigma$, to about $2.0$ at $\sigma=3$, because the noise widens both modes
+and fills the gap between them.
+\item \textbf{Shrinkage:} better than raw $Y$ at large $\sigma$ ($1.4$ against $2.0$ at $\sigma=3$), but still far off. Multiplying by $\lambda<1$
+makes the spread smaller, but it also pulls the two modes towards each other and keeps them blurred. It is the best
+\emph{linear} estimate of each $X_0$, not a reconstruction of the distribution.
+\item \textbf{Reverse diffusion:} stays near the noise level for all $\sigma$ and $N$ (at most $0.46$, and $0.20$ at $N=20000$, $\sigma=3$). After
+rescaling, the observations are exactly a sample of $p_{t^*}$, so the reverse process recovers $p_0$ up to sampling and
+discretisation error. Note that it reconstructs the \emph{distribution}: each output is a new sample from $p_0$, not a denoised
+version of the corresponding $X_0^{(i)}$.
+\end{itemize}
 
 \end{document}

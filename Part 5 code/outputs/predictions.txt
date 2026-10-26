@@ -1,0 +1,8 @@
+Case B: predicted mean shift delta_0 = 0.7581 * c
+
+Case C: predicted variance 9 + v0/(1+2 alpha)
+alpha = -0.25  within-mode 0.5000  total 9.5000
+alpha = -0.10  within-mode 0.3125  total 9.3125
+alpha =  0.10  within-mode 0.2083  total 9.2083
+alpha =  0.25  within-mode 0.1667  total 9.1667
+alpha =  0.50  within-mode 0.1250  total 9.1250
